@@ -11,7 +11,6 @@ st.title(
 )
 st.caption("Projeto de Extensão Universitária em Ciência de Dados - Apoio Escolar Digital")
 
-# Link oficial da planilha exportada em CSV do Google Drive
 SHEET_URL = "https://docs.google.com/spreadsheets/d/1MK9DkoRh3LJdf2iLcBEF61I2W_FGnPtCqbMdaYmkjTQ/export?format=csv"
 
 
@@ -19,6 +18,12 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1MK9DkoRh3LJdf2iLcBEF61I2W_F
 def carregar_dados():
   try:
     df = pd.read_csv(SHEET_URL)
+    # Seleciona apenas as colunas principais dos alunos (evita puxar os KPIs laterais)
+    colunas_uteis = ["Aluno", "Nota", "Frequencia_Pct", "Observacoes"]
+    df = df[[c for c in colunas_uteis if c in df.columns]].dropna(
+        subset=["Aluno"]
+    )
+
     if "Nota" in df.columns:
       df["Nota"] = pd.to_numeric(
           df["Nota"].astype(str).str.replace(",", "."), errors="coerce"
@@ -41,24 +46,22 @@ def carregar_dados():
     )
 
 
-# Carrega os dados da planilha
+# Carrega os dados
 df = carregar_dados()
-df = df.dropna(subset=["Aluno"])
 
 # Classificação automática de Risco
-if "Status_Risco" not in df.columns:
-  df["Status_Risco"] = df.apply(
-      lambda r: (
-          "⚠️ Alto Risco (Alerta)"
-          if (r["Nota"] < 6.0 or r["Frequencia_Pct"] < 75)
-          else "✅ Adequado"
-      ),
-      axis=1,
-  )
+df["Status_Risco"] = df.apply(
+    lambda r: (
+        "⚠️ Alto Risco (Alerta)"
+        if (r["Nota"] < 6.0 or r["Frequencia_Pct"] < 75)
+        else "✅ Adequado"
+    ),
+    axis=1,
+)
 
-# Paleta de cores personalizada: Azul elegante para adequado e Vermelho para alerta
+# Paleta de cores corrigida: Azul para Adequado e Vermelho estrito para Alto Risco
 CORES_RISCO = {
-    "✅ Adequado": "#3498db",  # Azul profissional
+    "✅ Adequado": "#3498db",  # Azul elegante
     "⚠️ Alto Risco (Alerta)": "#e74c3c",  # Vermelho de alerta
 }
 
@@ -80,7 +83,7 @@ col4.metric(
 
 st.divider()
 
-# Gráficos com a nova paleta de cores
+# Gráficos
 c1, c2 = st.columns(2)
 
 with c1:
@@ -112,7 +115,7 @@ with c2:
 
 st.divider()
 
-# Tabela Sincronizada
+# Tabela Sincronizada limpa
 st.subheader("📝 Registros Oficiais Sincronizados com o Google Sheets")
 st.dataframe(df, use_container_width=True)
 
