@@ -1,79 +1,101 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
 
-# Configuração da página
-st.set_page_config(page_title="Apoio Escolar - Análise de Desempenho", layout="wide")
+st.set_page_config(
+    page_title="Painel de Apoio Escolar", page_icon="📊", layout="wide"
+)
 
-st.title("📊 Painel de Análise de Desempenho e Prevenção à Evasão Escolar")
-st.markdown("Projeto de Extensão Universitária em Ciência de Dados — Apoio Escolar Digital")
+st.title(
+    "📊 Painel de Análise de Desempenho e Prevenção à Evasão Escolar"
+)
+st.caption("Projeto de Extensão Universitária em Ciência de Dados - Apoio Escolar Digital")
 
-# Dados simulados para execução imediata
-data_default = {
-    "Aluno": ["Ana Silva", "Bruno Santos", "Carla Lima", "Diego Costa", "Elena Souza", "Fernando Dias", "Gabriela Rocha"],
-    "Disciplina": ["Matemática", "Português", "História", "Ciências", "Matemática", "Português", "História"],
-    "Nota": [8.5, 4.2, 9.0, 5.5, 3.8, 7.0, 6.5],
-    "Frequencia_Pct": [92, 65, 98, 80, 58, 88, 90]
-}
+# Inicialização dos dados na sessão do usuário
+if "df_alunos" not in st.session_state:
+  st.session_state.df_alunos = pd.DataFrame({
+      "Aluno": [
+          "Ana Silva",
+          "Carla Lima",
+          "Fernando Dias",
+          "Gabriela Rocha",
+          "Bruno Santos",
+          "Diego Costa",
+          "Elena Souza",
+      ],
+      "Nota": [8.5, 9.0, 7.0, 6.5, 4.2, 5.5, 3.8],
+      "Frequencia_Pct": [85, 95, 92, 88, 62, 75, 58],
+  })
 
-# Interface para carregar arquivo ou usar dados demonstrativos
-st.sidebar.header("Configurações do Projeto")
-opcao_dados = st.sidebar.radio("Fonte de Dados:", ("Dados Demonstrativos do Projeto", "Carregar Planilha (CSV/XLSX)"))
-
-if opcao_dados == "Carregar Planilha (CSV/XLSX)":
-    uploaded_file = st.sidebar.file_uploader("Envie a planilha dos alunos", type=["csv", "xlsx"])
-    if uploaded_file is not None:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-    else:
-        df = pd.DataFrame(data_default)
-else:
-    df = pd.DataFrame(data_default)
-
-# Regra de Risco (Ciência de Dados aplicada à pedagogia)
+# Classificação automática de Risco
+df = st.session_state.df_alunos.copy()
 df["Status_Risco"] = df.apply(
-    lambda row: "⚠️ Alto Risco (Alerta)" if (row["Nota"] < 6.0 or row["Frequencia_Pct"] < 75) else "✅ Adequado", axis=1
+    lambda r: (
+        "⚠️ Alto Risco (Alerta)"
+        if (r["Nota"] < 6.0 or r["Frequencia_Pct"] < 75)
+        else "✅ Adequado"
+    ),
+    axis=1,
 )
 
 # Métricas Principais
 col1, col2, col3, col4 = st.columns(4)
-col1.metric("Total de Alunos Analisados", len(df["Aluno"].unique()))
+col1.metric("Total de Alunos", len(df))
 col2.metric("Média Geral de Notas", f"{df['Nota'].mean():.2f}")
 col3.metric("Frequência Média", f"{df['Frequencia_Pct'].mean():.1f}%")
-col4.metric("Alunos em Situação de Risco", len(df[df["Status_Risco"] == "⚠️ Alto Risco (Alerta)"]))
+col4.metric(
+    "Alunos em Risco", len(df[df["Status_Risco"].str.contains("Alto Risco")])
+)
 
 st.divider()
 
 # Gráficos
-col_left, col_right = st.columns(2)
+c1, c2 = st.columns(2)
 
-with col_left:
-    st.subheader("Distribuição do Desempenho por Nota")
-    fig_bar = px.bar(
-        df, 
-        x="Aluno", 
-        y="Nota", 
-        color="Status_Risco",
-        color_discrete_map={"✅ Adequado": "#2ecc71", "⚠️ Alto Risco (Alerta)": "#e74c3c"},
-        title="Notas Individuais e Identificação de Risco"
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
+with c1:
+  st.subheader("Distribuição do Desempenho por Nota")
+  fig_bar = px.bar(
+      df,
+      x="Aluno",
+      y="Nota",
+      color="Status_Risco",
+      color_discrete_map={
+          "✅ Adequado": "#2ecc71",
+          "⚠️ Alto Risco (Alerta)": "#e74c3c",
+      },
+      text_auto=True,
+  )
+  st.plotly_chart(fig_bar, use_container_width=True)
 
-with col_right:
-    st.subheader("Relação Frequência vs Nota")
-    fig_scatter = px.scatter(
-        df, 
-        x="Frequencia_Pct", 
-        y="Nota", 
-        color="Status_Risco",
-        size="Nota",
-        hover_name="Aluno",
-        title="Dispersão: Assiduidade x Aprendizado"
-    )
-    st.plotly_chart(fig_scatter, use_container_width=True)
+with c2:
+  st.subheader("Relação Frequência vs Nota")
+  fig_scatter = px.scatter(
+      df,
+      x="Frequencia_Pct",
+      y="Nota",
+      color="Status_Risco",
+      color_discrete_map={
+          "✅ Adequado": "#2ecc71",
+          "⚠️ Alto Risco (Alerta)": "#e74c3c",
+      },
+      hover_name="Aluno",
+  )
+  st.plotly_chart(fig_scatter, use_container_width=True)
 
-st.subheader("📋 Relatório Sintético de Intervenção Pedagógica")
-st.dataframe(df, use_container_width=True)
+st.divider()
 
+# Tabela Interativa de Cadastro e Edição
+st.subheader("📝 Cadastro e Edição de Alunos em Tempo Real")
+st.info(
+    "Qualquer usuário pode adicionar novas linhas ou alterar dados na tabela"
+    " abaixo:"
+)
+
+df_editado = st.data_editor(
+    st.session_state.df_alunos, num_rows="dynamic", use_container_width=True
+)
+
+if st.button("💾 Atualizar Indicadores e Gráficos"):
+  st.session_state.df_alunos = df_editado
+  st.success("Painel e indicadores atualizados com sucesso!")
+  st.rerun()
