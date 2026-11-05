@@ -18,7 +18,23 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1MK9DkoRh3LJdf2iLcBEF61I2W_F
 @st.cache_data(ttl=10)
 def carregar_dados():
   try:
-    return pd.read_csv(SHEET_URL)
+    df = pd.read_csv(SHEET_URL)
+    # Limpeza e conversão forçada para garantir tipos numéricos corretos
+    if "Nota" in df.columns:
+      df["Nota"] = pd.to_numeric(
+          df["Nota"].astype(str).str.replace(",", "."), errors="coerce"
+      )
+    if "Frequencia_Pct" in df.columns:
+      df["Frequencia_Pct"] = (
+          df["Frequencia_Pct"]
+          .astype(str)
+          .str.replace("%", "", regex=True)
+          .str.replace(",", ".", regex=True)
+      )
+      df["Frequencia_Pct"] = pd.to_numeric(
+          df["Frequencia_Pct"], errors="coerce"
+      )
+    return df
   except Exception as e:
     st.error(f"Erro ao carregar dados da planilha: {e}")
     return pd.DataFrame(
@@ -29,7 +45,10 @@ def carregar_dados():
 # Carrega os dados da planilha
 df = carregar_dados()
 
-# Garantir colunas essenciais
+# Tratamento de valores vazios se houver
+df = df.dropna(subset=["Aluno"])
+
+# Classificação automática de Risco
 if "Status_Risco" not in df.columns:
   df["Status_Risco"] = df.apply(
       lambda r: (
@@ -96,11 +115,7 @@ with c2:
 
 st.divider()
 
-# Exibição e Consulta dos Dados Oficiais do Google Sheets
+# Tabela Sincronizada
 st.subheader("📝 Registros Oficiais Sincronizados com o Google Sheets")
-st.info(
-    "Estes dados são carregados em tempo real da sua planilha oficial no"
-    " Google Drive."
-)
 st.dataframe(df, use_container_width=True)
 
