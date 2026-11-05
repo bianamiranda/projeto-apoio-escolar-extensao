@@ -18,7 +18,6 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1MK9DkoRh3LJdf2iLcBEF61I2W_F
 def carregar_dados():
   try:
     df = pd.read_csv(SHEET_URL)
-    # Seleciona apenas as colunas principais dos alunos (evita puxar os KPIs laterais)
     colunas_uteis = ["Aluno", "Nota", "Frequencia_Pct", "Observacoes"]
     df = df[[c for c in colunas_uteis if c in df.columns]].dropna(
         subset=["Aluno"]
@@ -59,10 +58,10 @@ df["Status_Risco"] = df.apply(
     axis=1,
 )
 
-# Paleta de cores corrigida: Azul para Adequado e Vermelho estrito para Alto Risco
+# Paleta de cores: Azul cinzento elegante e Vermelho de alerta
 CORES_RISCO = {
-    "✅ Adequado": "#",  # Azul elegante
-    "⚠️ Alto Risco (Alerta)": "#e74c3c",  # Vermelho de alerta
+    "✅ Adequado": "#2980b9",
+    "⚠️ Alto Risco (Alerta)": "#e74c3c",
 }
 
 # Métricas Principais (KPIs)
@@ -99,7 +98,7 @@ with c1:
     )
     st.plotly_chart(fig_bar, use_container_width=True)
 
- with c2:
+with c2:
   st.subheader("Relação Frequência vs Nota")
   if not df.empty:
     fig_scatter = px.scatter(
@@ -111,13 +110,12 @@ with c1:
         hover_name="Aluno",
         hover_data=["Observacoes"],
     )
-    # LINHA PARA AUMENTAR AS BOLINHAS:
+    # Aumentar tamanho das bolinhas do gráfico
     fig_scatter.update_traces(marker=dict(size=14))
-
     st.plotly_chart(fig_scatter, use_container_width=True)
+
 st.divider()
 
 # Tabela Sincronizada limpa
 st.subheader("📝 Registros Oficiais Sincronizados com o Google Sheets")
 st.dataframe(df, use_container_width=True)
-
