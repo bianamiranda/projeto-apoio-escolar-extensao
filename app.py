@@ -61,7 +61,7 @@ df["Status_Risco"] = df.apply(
 
 # Paleta de cores corrigida: Azul para Adequado e Vermelho estrito para Alto Risco
 CORES_RISCO = {
-    "✅ Adequado": "#3498db",  # Azul elegante
+    "✅ Adequado": "#",  # Azul elegante
     "⚠️ Alto Risco (Alerta)": "#e74c3c",  # Vermelho de alerta
 }
 
@@ -99,7 +99,7 @@ with c1:
     )
     st.plotly_chart(fig_bar, use_container_width=True)
 
-with c2:
+ with c2:
   st.subheader("Relação Frequência vs Nota")
   if not df.empty:
     fig_scatter = px.scatter(
@@ -111,8 +111,10 @@ with c2:
         hover_name="Aluno",
         hover_data=["Observacoes"],
     )
-    st.plotly_chart(fig_scatter, use_container_width=True)
+    # LINHA PARA AUMENTAR AS BOLINHAS:
+    fig_scatter.update_traces(marker=dict(size=14))
 
+    st.plotly_chart(fig_scatter, use_container_width=True)
 st.divider()
 
 # Tabela Sincronizada limpa
