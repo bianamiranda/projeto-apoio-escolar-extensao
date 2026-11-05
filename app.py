@@ -19,7 +19,6 @@ SHEET_URL = "https://docs.google.com/spreadsheets/d/1MK9DkoRh3LJdf2iLcBEF61I2W_F
 def carregar_dados():
   try:
     df = pd.read_csv(SHEET_URL)
-    # Limpeza e conversão forçada para garantir tipos numéricos corretos
     if "Nota" in df.columns:
       df["Nota"] = pd.to_numeric(
           df["Nota"].astype(str).str.replace(",", "."), errors="coerce"
@@ -44,8 +43,6 @@ def carregar_dados():
 
 # Carrega os dados da planilha
 df = carregar_dados()
-
-# Tratamento de valores vazios se houver
 df = df.dropna(subset=["Aluno"])
 
 # Classificação automática de Risco
@@ -58,6 +55,12 @@ if "Status_Risco" not in df.columns:
       ),
       axis=1,
   )
+
+# Paleta de cores personalizada: Azul elegante para adequado e Vermelho para alerta
+CORES_RISCO = {
+    "✅ Adequado": "#3498db",  # Azul profissional
+    "⚠️ Alto Risco (Alerta)": "#e74c3c",  # Vermelho de alerta
+}
 
 # Métricas Principais (KPIs)
 col1, col2, col3, col4 = st.columns(4)
@@ -77,7 +80,7 @@ col4.metric(
 
 st.divider()
 
-# Gráficos
+# Gráficos com a nova paleta de cores
 c1, c2 = st.columns(2)
 
 with c1:
@@ -88,10 +91,7 @@ with c1:
         x="Aluno",
         y="Nota",
         color="Status_Risco",
-        color_discrete_map={
-            "✅ Adequado": "#2ecc71",
-            "⚠️ Alto Risco (Alerta)": "#e74c3c",
-        },
+        color_discrete_map=CORES_RISCO,
         text_auto=True,
     )
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -104,10 +104,7 @@ with c2:
         x="Frequencia_Pct",
         y="Nota",
         color="Status_Risco",
-        color_discrete_map={
-            "✅ Adequado": "#2ecc71",
-            "⚠️ Alto Risco (Alerta)": "#e74c3c",
-        },
+        color_discrete_map=CORES_RISCO,
         hover_name="Aluno",
         hover_data=["Observacoes"],
     )
