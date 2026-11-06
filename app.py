@@ -139,7 +139,12 @@ st.divider()
 
 # Tabela Sincronizada e Opção de Download
 st.subheader("📝 Registros Oficiais Sincronizados")
-st.dataframe(df, use_container_width=True)
+# Tabela interativa editável para alteração direta de dados
+df_editado = st.data_editor(
+    df,
+    num_rows="dynamic",
+    use_container_width=True
+)
 
 if not df.empty:
   csv_data = df.to_csv(index=False).encode("utf-8")
